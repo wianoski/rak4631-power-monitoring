@@ -23,7 +23,6 @@ typedef struct
 typedef struct
 {
     EnergyICCalibrationSettings energyCalibrations[2];
-    CurrentTransformerCalibrationSetting ctCalibration[3];
 } ApplicationSettings;
 
 #endif

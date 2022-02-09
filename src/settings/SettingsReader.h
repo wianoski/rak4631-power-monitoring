@@ -2,7 +2,9 @@
 #define DYCODEX_POWTRAX_SETTINGS_READER_H
 
 #include "AppSettings.h"
-#include <Preferences.h>
+
+#define ENERGY_GAIN 0
+#define ENERGY_CAL 27961
 
 class SettingsReader
 {
@@ -15,8 +17,6 @@ public:
     bool reset(ApplicationSettings *appSettings);
     bool save(ApplicationSettings *appSettings);
     bool begin();
-private:
-    Preferences *_prefs;
 };
 
 extern SettingsReader AppSettingsReader;
