@@ -6,6 +6,7 @@
 #include <freertos/Source/include/task.h>
 #include <freertos/Source/include/queue.h>
 #include <ATM90E32.h>
+#include <littlefs/lfs.h>
 
 #include "settings/AppSettings.h"
 #include "settings/SettingsReader.h"
@@ -17,7 +18,7 @@
 #define WISBLOCK_ENERGY_MISO WB_SPI_MISO
 #define WISBLOCK_ENERGY_CLK WB_SPI_CLK
 #define WISBLOCK_ENERGY_CS_1 WB_IO4
-#define WISBLOCK_ENERGY_CS_2 WB_IO5
+#define WISBLOCK_ENERGY_CS_2 WB_IO3
 
 ApplicationSettings *settings;
 
@@ -32,8 +33,10 @@ EnergyReadings readings[2] = {
     {},
 };
 
-void energyReading()
+volatile bool isReadingSensor = false;
+void energyReading(volatile bool *isReadingSensor)
 {
+    *isReadingSensor = true;
     for (int ic = 0; ic < ENERGYIC_NUM_ICS; ic++)
     {
         readings[ic].sys0 = energyMonitorIc[ic]->GetSysStatus0();
@@ -41,16 +44,16 @@ void energyReading()
         readings[ic].en0 = energyMonitorIc[ic]->GetMeterStatus0();
         readings[ic].en1 = energyMonitorIc[ic]->GetMeterStatus1();
 
-        Serial.println("Sys Status 1: S0:0x" + String(readings[ic].sys0, HEX) + " S1:0x" + String(readings[ic].sys1, HEX));
-        Serial.println("Meter Status 1: E0:0x" + String(readings[ic].en0, HEX) + " E1:0x" + String(readings[ic].en1, HEX));
+        // Serial.println("Sys Status 1: S0:0x" + String(readings[ic].sys0, HEX) + " S1:0x" + String(readings[ic].sys1, HEX));
+        // Serial.println("Meter Status 1: E0:0x" + String(readings[ic].en0, HEX) + " E1:0x" + String(readings[ic].en1, HEX));
 
         readings[ic].voltage = energyMonitorIc[ic]->GetLineVoltageA();
         readings[ic].frequency = energyMonitorIc[ic]->GetFrequency();
         readings[ic].temperature = energyMonitorIc[ic]->GetTemperature();
 
-        Serial.println("Temp: " + String(readings[ic].temperature) + "C");
-        Serial.println("Freq: " + String(readings[ic].frequency) + "Hz");
-        Serial.println("V: " + String(readings[ic].voltage) + "V");
+        // Serial.println("Temp: " + String(readings[ic].temperature) + "C");
+        // Serial.println("Freq: " + String(readings[ic].frequency) + "Hz");
+        // Serial.println("V: " + String(readings[ic].voltage) + "V");
 
         readings[ic].lineVoltage[0] = energyMonitorIc[ic]->GetLineVoltageA();
         readings[ic].lineVoltage[1] = energyMonitorIc[ic]->GetLineVoltageB();
@@ -83,23 +86,28 @@ void energyReading()
             readings[ic].realPower[i] *= settings->energyCalibrations[0].cts[i].powerMultiplier * settings->energyCalibrations->cts[i].currentMultiplier;
             readings[ic].vaPower[i] *= fabs(settings->energyCalibrations[0].cts[i].powerMultiplier * settings->energyCalibrations->cts[i].currentMultiplier);
 
-            Serial.println(String(ic) + "_" + String(i) + ":" + String(readings[ic].current[i]) + "A");
+            // Serial.println(String(ic) + "_" + String(i) + ":" + String(readings[ic].current[i]) + "A");
         }
     }
     String json = EnergyJsonSerializer::serializeEnergy(readings, ENERGYIC_NUM_ICS);
+
+    *isReadingSensor = false;
+    Serial.println(json);
 }
 
+uint32_t lastSensorRead = 0;
 void setup()
 {
     Serial.begin(115200);
     Wire.begin();
+
+    pinMode(WISBLOCK_ENERGY_CS_1, OUTPUT);
+    pinMode(WISBLOCK_ENERGY_CS_2, OUTPUT);
     SPI.begin();
-    // pinMode(WISBLOCK_ENERGY_CS_1, OUTPUT);
-    // pinMode(WISBLOCK_ENERGY_CS_2, OUTPUT);
 
     settings = new ApplicationSettings;
 
-    for(int ic=0; ic < ENERGYIC_NUM_ICS; ic++)
+    for (int ic = 0; ic < ENERGYIC_NUM_ICS; ic++)
     {
         energyMonitorIc[ic]->begin(energyMonitorCS[ic],
                                    settings->energyCalibrations[ic].frequency,
@@ -110,9 +118,13 @@ void setup()
                                    settings->energyCalibrations[ic].cts[2].cal);
     }
     delay(200);
-
 }
 
 void loop()
 {
+    if (lastSensorRead == 0 || (millis() - lastSensorRead >= 10000))
+    {
+        energyReading(&isReadingSensor);
+        lastSensorRead = millis();
+    }
 }
