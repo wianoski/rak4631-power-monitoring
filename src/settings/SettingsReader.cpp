@@ -27,7 +27,7 @@ bool SettingsReader::reset(ApplicationSettings *settings)
             energyCalibration.gain |= (ct.gain << (i * 2));
         }
 
-        energyCalibration.voltage = 0;
+        energyCalibration.voltage = 1;
 
         settings->energyCalibrations[count] = energyCalibration;
     }

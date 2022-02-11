@@ -22,7 +22,7 @@
 
 ApplicationSettings *settings;
 
-const uint8_t energyMonitorCS[2] = {WISBLOCK_ENERGY_CS_1, WISBLOCK_ENERGY_CS_2};
+const uint8_t energyMonitorCS[2] = {SS, WISBLOCK_ENERGY_CS_2};
 ATM90E32 *energyMonitorIc[ENERGYIC_NUM_ICS] = {
     new ATM90E32(),
     new ATM90E32(),
@@ -44,16 +44,16 @@ void energyReading(volatile bool *isReadingSensor)
         readings[ic].en0 = energyMonitorIc[ic]->GetMeterStatus0();
         readings[ic].en1 = energyMonitorIc[ic]->GetMeterStatus1();
 
-        // Serial.println("Sys Status 1: S0:0x" + String(readings[ic].sys0, HEX) + " S1:0x" + String(readings[ic].sys1, HEX));
-        // Serial.println("Meter Status 1: E0:0x" + String(readings[ic].en0, HEX) + " E1:0x" + String(readings[ic].en1, HEX));
+        Serial.println("Sys Status 1: S0:0x" + String(readings[ic].sys0, HEX) + " S1:0x" + String(readings[ic].sys1, HEX));
+        Serial.println("Meter Status 1: E0:0x" + String(readings[ic].en0, HEX) + " E1:0x" + String(readings[ic].en1, HEX));
 
         readings[ic].voltage = energyMonitorIc[ic]->GetLineVoltageA();
         readings[ic].frequency = energyMonitorIc[ic]->GetFrequency();
         readings[ic].temperature = energyMonitorIc[ic]->GetTemperature();
 
-        // Serial.println("Temp: " + String(readings[ic].temperature) + "C");
-        // Serial.println("Freq: " + String(readings[ic].frequency) + "Hz");
-        // Serial.println("V: " + String(readings[ic].voltage) + "V");
+        Serial.println("Temp: " + String(readings[ic].temperature) + "C");
+        Serial.println("Freq: " + String(readings[ic].frequency) + "Hz");
+        Serial.println("V: " + String(readings[ic].voltage) + "V");
 
         readings[ic].lineVoltage[0] = energyMonitorIc[ic]->GetLineVoltageA();
         readings[ic].lineVoltage[1] = energyMonitorIc[ic]->GetLineVoltageB();
@@ -86,13 +86,13 @@ void energyReading(volatile bool *isReadingSensor)
             readings[ic].realPower[i] *= settings->energyCalibrations[0].cts[i].powerMultiplier * settings->energyCalibrations->cts[i].currentMultiplier;
             readings[ic].vaPower[i] *= fabs(settings->energyCalibrations[0].cts[i].powerMultiplier * settings->energyCalibrations->cts[i].currentMultiplier);
 
-            // Serial.println(String(ic) + "_" + String(i) + ":" + String(readings[ic].current[i]) + "A");
+            Serial.println(String(ic) + "_" + String(i) + ":" + String(readings[ic].current[i]) + "A");
         }
     }
     String json = EnergyJsonSerializer::serializeEnergy(readings, ENERGYIC_NUM_ICS);
 
     *isReadingSensor = false;
-    Serial.println(json);
+    // Serial.println(json);
 }
 
 uint32_t lastSensorRead = 0;

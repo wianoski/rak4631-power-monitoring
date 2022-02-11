@@ -3,7 +3,7 @@
 
 #include "AppSettings.h"
 
-#define ENERGY_GAIN 0
+#define ENERGY_GAIN 1
 #define ENERGY_CAL 27961
 
 class SettingsReader
