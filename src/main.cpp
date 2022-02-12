@@ -22,7 +22,7 @@
 
 ApplicationSettings *settings;
 
-const uint8_t energyMonitorCS[2] = {SS, WISBLOCK_ENERGY_CS_2};
+const uint8_t energyMonitorCS[2] = {WISBLOCK_ENERGY_CS_1, WISBLOCK_ENERGY_CS_2};
 ATM90E32 *energyMonitorIc[ENERGYIC_NUM_ICS] = {
     new ATM90E32(),
     new ATM90E32(),
